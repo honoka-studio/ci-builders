@@ -3,34 +3,56 @@ package de.honoka.ci.builder.util
 import de.honoka.ci.builder.main
 import kotlin.reflect.jvm.javaMethod
 
-object EnvVariables {
+data class EnvVariables(
 
-    val builderName: String? = getEnv("BUILDER_NAME")
+    var builderName: String = "",
 
-    var mainClass: String? = getEnv("BUILDER_MAIN_CLASS")
+    var mainClass: String? = getEnvOrNull("BUILDER_MAIN_CLASS"),
+
+    var functionName: String = "",
+
+    var commandArgs: List<String> = listOf(),
+
+    var projectPath: String? = getEnvOrNull("PROJECT_PATH"),
+
+    var workspace: String = getEnv("GITHUB_WORKSPACE"),
+
+    var workspaceName: String = "",
+
+    val githubOutput: String = getEnv("GITHUB_OUTPUT")
+) {
+
+    fun initArgs(args: Array<String>) {
+        var startIndex = 2
+        if(mainClass == null) {
+            builderName = args[0]
+            functionName = args[1]
+        } else {
+            functionName = args[0]
+            startIndex = 1
+        }
+        this.commandArgs = args.toList().subList(startIndex, args.size)
+        initMainClass()
+        initWorkspace()
+    }
+
+    private fun initMainClass() {
+        val thisClass = ::main.javaMethod!!.declaringClass.name
+        val prefix = thisClass.take(thisClass.lastIndexOf(".") + 1)
+        mainClass?.let { return }
+        val suffix = builderNameClassMap[builderName] ?: run {
+            error("No builder with name \"$builderName\"!")
+        }
+        mainClass = "$prefix$suffix"
+    }
+
+    private fun initWorkspace() {
+        projectPath = projectPath ?: "$workspace/repo"
+        workspaceName = workspace.substring(workspace.lastIndexOf("/") + 1)
+    }
 }
 
 private val builderNameClassMap = mapOf(
-    "gradle-library" to "gradle.library.LibraryKt",
-    "npm-library" to "npm.library.LibraryKt"
+    "gradle-library" to "gradle.GradleLibraryBuilder",
+    "npm-library" to "npm.NpmLibraryBuilder"
 )
-
-private lateinit var rootPackage: String
-
-private fun getEnv(name: String): String? {
-    val env = System.getenv(name)
-    return if(env.isNullOrBlank()) null else env
-}
-
-fun initMainClass() {
-    val thisClass = ::main.javaMethod!!.declaringClass.name
-    rootPackage = thisClass.take(thisClass.lastIndexOf("."))
-    EnvVariables.run {
-        if(mainClass != null) return
-        builderName ?: throw Exception("No BUILDER_NAME or BUILDER_MAIN_CLASS specified!")
-        val suffix = builderNameClassMap[builderName] ?: run {
-            throw Exception("No builder with name \"$builderName\"!")
-        }
-        mainClass = "${rootPackage}.$suffix"
-    }
-}

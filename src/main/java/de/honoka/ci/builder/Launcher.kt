@@ -1,21 +1,27 @@
 package de.honoka.ci.builder
 
+import cn.hutool.core.exceptions.ExceptionUtil
+import cn.hutool.json.JSONUtil
 import de.honoka.ci.builder.util.EnvVariables
-import de.honoka.ci.builder.util.initMainClass
+import kotlin.reflect.full.memberFunctions
 
-var args = listOf<String>()
-    private set
+val envVariables = EnvVariables()
 
-fun main(cmdArgs: Array<String>) {
-    args = cmdArgs.toList()
-    initMainClass()
-    val buildClass = Class.forName(EnvVariables.mainClass)
-    val method = runCatching {
-        buildClass.getDeclaredMethod(args[0])
-    }.getOrElse {
-        val msg = "No function with name \"${args[0]}\" in class \"${EnvVariables.mainClass}"
-        throw Exception(msg)
+fun main(args: Array<String>) {
+    envVariables.initArgs(args)
+    val json = JSONUtil.parse(envVariables).run {
+        config.isIgnoreNullValue = false
+        toStringPretty()
     }
-    args = args.subList(1, args.size)
-    method.invoke(null)
+    println("Environment Variables:\n$json\n\n")
+    val buildClass = Class.forName(envVariables.mainClass).kotlin
+    val function = buildClass.memberFunctions.firstOrNull { it.name == envVariables.functionName }
+    function ?: run {
+        error("No function with name \"${envVariables.functionName}\" in class \"${envVariables.mainClass}")
+    }
+    runCatching {
+        function.call(buildClass.objectInstance)
+    }.getOrElse {
+        throw ExceptionUtil.getRootCause(it)
+    }
 }

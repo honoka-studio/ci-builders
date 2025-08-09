@@ -2,10 +2,17 @@
 
 set -e
 
+# region 参数校验
 if [ -z "$GITHUB_WORKSPACE" ]; then
-  echo 'Must specify a project root path!'
+  echo 'Must specify GITHUB_WORKSPACE!'
   exit 10
 fi
+
+if [ -z "$CI_BUILDERS_VERSION" ]; then
+  echo 'Must specify CI_BUILDERS_VERSION!'
+  exit 10
+fi
+# endregion
 
 cd "$GITHUB_WORKSPACE"
 

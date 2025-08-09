@@ -3,8 +3,9 @@ import java.nio.charset.StandardCharsets
 
 plugins {
     java
-    application
+    id("org.springframework.boot") version "3.5.4"
     kotlin("jvm") version "2.2.0"
+    kotlin("plugin.spring") version "2.2.0"
 }
 
 group = "de.honoka.ci"
@@ -43,11 +44,11 @@ tasks {
         }
     }
 
+    bootJar {
+        archiveFileName = "${project.name}.jar"
+    }
+
     withType<Test> {
         useJUnitPlatform()
     }
-}
-
-application {
-    mainClass.set("de.honoka.ci.builder.LauncherKt")
 }
