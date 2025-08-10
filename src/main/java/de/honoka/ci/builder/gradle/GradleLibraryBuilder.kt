@@ -46,8 +46,9 @@ object GradleLibraryBuilder {
             error("Some projects with release version contain dependencies with development version!")
         }
         //打包，并发布到一个空的Maven仓库中
-        repositoryName = if(projectsPassed) "release" else "development"
         isDevelopmentVersion = !projectsPassed
+        repositoryName = if(isDevelopmentVersion) "development" else "release"
+        println("\n\nUsing $repositoryName repository to publish artifacts.\n")
         FileUtil.mkdir("${envVariables.workspace}/maven-repo/repository/$repositoryName")
         /*
          * 若仅在Gradle中指定task的依赖关系，无法保证在B模块依赖A模块时，在A模块的publish任务执行完成之后，

@@ -1,12 +1,11 @@
 package de.honoka.ci.builder.npm
 
-import cn.hutool.json.JSONUtil
+import cn.hutool.core.io.FileUtil
 import de.honoka.ci.builder.envVariables
 import de.honoka.ci.builder.util.BuilderConfig
 import de.honoka.ci.builder.util.execInProjectPath
 import de.honoka.ci.builder.util.execInWorkspace
 import de.honoka.ci.builder.util.getEnv
-import de.honoka.ci.builder.util.npm.NpmVersionChecker
 import java.io.File
 import java.util.concurrent.TimeUnit
 
@@ -36,6 +35,8 @@ object NpmLibraryBuilder {
 
     private val localRegistryPath = "$userHome/.local/share/verdaccio/storage"
 
+    private val artifactsPath = "${envVariables.workspace}/npm-packages"
+
     private var verdaccioProcess: Process? = null
 
     private fun build() {
@@ -44,8 +45,10 @@ object NpmLibraryBuilder {
         if(checkVersionResults.projectsPassed && !checkVersionResults.dependenciesPassed) {
             error("Some projects with release version contain dependencies with development version!")
         }
-        registryName = if(checkVersionResults.projectsPassed) "release" else "development"
+        //打包，并发布到本地的npm registry中
         isDevelopmentVersion = !checkVersionResults.projectsPassed
+        registryName = if(isDevelopmentVersion) "development" else "release"
+        println("\n\nUsing $registryName repository to publish artifacts.\n")
         val command = """
             # 将存储npm仓库文件的Git仓库clone到workspace下
             git clone "$npmRegistryUrl" maven-repo
@@ -64,38 +67,24 @@ object NpmLibraryBuilder {
             removeExistingPackage("${envVariables.projectPath}/$it")
         }
         startVerdaccio()
+        FileUtil.mkdir(artifactsPath)
         config.projectsToPublish.forEach {
-            publishToLocal(it)
+            publishToLocal("${envVariables.projectPath}/$it")
         }
     }
 
     private fun removeExistingPackage(projectPath: String) {
-        val file = File("$projectPath/package.json").apply {
-            if(!exists()) error("The directory \"$projectPath\" is not a npm project.")
-        }
-        val json = JSONUtil.parseObj(file.readText())
-        val packageName = json.getStr("name").run {
-            if(contains("/")) {
-                substring(indexOf("/") + 1)
-            } else {
-                this
+        NpmProject(projectPath, localRegistryPath).run {
+            packageJsonInRegistry ?: return
+            packageFile.delete()
+            packageJsonInRegistry.run {
+                getJSONObject("versions").remove(version)
+                getJSONObject("time").remove(version)
+                getJSONObject("dist-tags").remove("latest")
+                getJSONObject("_attachments").remove(packageFile.name)
             }
+            packageJsonFileInRegistry.writeText(packageJsonInRegistry.toStringPretty())
         }
-        val packagePath = "$localRegistryPath/${json["name"]}"
-        if(!File(packagePath).exists()) return
-        val tgzName = "$packageName-${json["version"]}.tgz"
-        File("$packagePath/$tgzName").delete()
-        val infoFile = File("$packagePath/package.json")
-        val info = JSONUtil.parseObj(infoFile.readText()).apply {
-            config.isIgnoreNullValue = false
-        }
-        info.run {
-            getJSONObject("versions").remove(json["version"])
-            getJSONObject("time").remove(json["version"])
-            getJSONObject("dist-tags").remove("latest")
-            getJSONObject("_attachments").remove(tgzName)
-        }
-        infoFile.writeText(info.toStringPretty())
     }
 
     private fun startVerdaccio() {
@@ -105,7 +94,6 @@ object NpmLibraryBuilder {
             waitFor()
         }
         verdaccioProcess = ProcessBuilder("verdaccio").run {
-            redirectInput(ProcessBuilder.Redirect.DISCARD)
             redirectOutput(ProcessBuilder.Redirect.DISCARD)
             redirectErrorStream(true)
             directory(File(envVariables.projectPath!!))
@@ -114,13 +102,19 @@ object NpmLibraryBuilder {
         TimeUnit.SECONDS.sleep(3)
     }
 
-    private fun publishToLocal(projectName: String) {
-        val command = """
-            cd ${envVariables.projectPath}/$projectName
-            cp -f ${envVariables.workspace}/maven-repo/files/verdaccio/.npmrc.honoka ./
-            npm publish --userconfig .npmrc.honoka --registry=http://localhost:4873
-        """.trimIndent()
-        execInProjectPath(command)
+    private fun publishToLocal(projectPath: String) {
+        NpmProject(projectPath, localRegistryPath).run {
+            val artifactPath = "$artifactsPath/$name"
+            FileUtil.mkdir(artifactPath)
+            val command = """
+                cd $projectPath
+                cp -f ${envVariables.workspace}/maven-repo/files/verdaccio/.npmrc.honoka ./
+                npm publish --userconfig .npmrc.honoka --registry=http://localhost:4873
+                cp -f ${packageFile.path} $artifactPath/
+                cp -f ${packageJsonFileInRegistry.path} $artifactPath/
+            """.trimIndent()
+            execInProjectPath(command)
+        }
     }
 
     fun publish() {

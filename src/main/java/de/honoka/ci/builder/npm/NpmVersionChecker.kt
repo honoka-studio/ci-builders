@@ -1,4 +1,4 @@
-package de.honoka.ci.builder.util.npm
+package de.honoka.ci.builder.npm
 
 import cn.hutool.json.JSONObject
 import cn.hutool.json.JSONUtil
@@ -13,26 +13,19 @@ class NpmVersionChecker(private val rootProjectPath: String) {
         var dependenciesPassed: Boolean = true
     )
 
-    private val packageJsonPaths = ArrayList<String>()
-
-    private val packageJsons = ArrayList<JSONObject>()
+    private val projects = ArrayList<NpmProject>()
 
     private val results = Results()
 
     fun check(): Results {
-        val packageJsonFile = File("$rootProjectPath/package.json").apply {
-            if(exists()) return@apply
-            error("The directory \"$rootProjectPath\" is not a root project.")
-        }
-        packageJsonPaths.add(packageJsonFile.path)
-        findPackageJson(rootProjectPath)
+        val project = NpmProject(rootProjectPath)
+        projects.add(project)
+        findPackageJson(project)
         separator()
         println("Versions:\n")
-        for(path in packageJsonPaths) {
-            val json = JSONUtil.parseObj(File(path).readText())
-            packageJsons.add(json)
-            println("${json["name"]}=${json["version"]}")
-            if(json.getStr("version").contains("dev")) {
+        for(p in projects) {
+            println("${p.name}=${p.version}")
+            if(p.version.contains("dev")) {
                 results.projectsPassed = false
                 break
             }
@@ -40,10 +33,10 @@ class NpmVersionChecker(private val rootProjectPath: String) {
         separator()
         if(results.projectsPassed) {
             println("Dependencies:\n")
-            for(json in packageJsons) {
+            for(p in projects) {
                 if(!results.dependenciesPassed) break
-                checkDependencies(json.getJSONObject("dependencies"))
-                checkDependencies(json.getJSONObject("devDependencies"))
+                checkDependencies(p.packageJson.getJSONObject("dependencies"))
+                checkDependencies(p.packageJson.getJSONObject("devDependencies"))
             }
             separator()
         }
@@ -57,14 +50,14 @@ class NpmVersionChecker(private val rootProjectPath: String) {
         println("-----------------------------------")
     }
 
-    private fun findPackageJson(projectPath: String) {
-        File(projectPath).listFiles().forEach {
+    private fun findPackageJson(project: NpmProject) {
+        File(project.projectPath).listFiles().forEach {
             if(!it.isDirectory || it.name == "node_modules") return@forEach
-            val json = File("$projectPath/${it.name}/package.json")
-            if(json.exists()) {
-                packageJsonPaths.add(json.path)
+            runCatching {
+                val subProject = NpmProject("${project.projectPath}/${it.name}")
+                projects.add(subProject)
+                findPackageJson(subProject)
             }
-            findPackageJson("$projectPath/${it.name}")
         }
     }
 
