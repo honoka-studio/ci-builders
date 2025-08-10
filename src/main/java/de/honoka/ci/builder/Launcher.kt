@@ -5,10 +5,20 @@ import cn.hutool.json.JSONUtil
 import de.honoka.ci.builder.util.EnvVariables
 import kotlin.reflect.full.memberFunctions
 
-val envVariables = EnvVariables()
+lateinit var envVariables: EnvVariables
+    private set
 
 fun main(args: Array<String>) {
-    envVariables.initArgs(args)
+    runCatching {
+        envVariables = EnvVariables()
+        envVariables.initArgs(args)
+        launch()
+    }.getOrElse {
+        throw ExceptionUtil.getRootCause(it)
+    }
+}
+
+private fun launch() {
     val json = JSONUtil.parse(envVariables).run {
         config.isIgnoreNullValue = false
         toStringPretty()
@@ -19,9 +29,5 @@ fun main(args: Array<String>) {
     function ?: run {
         error("No function with name \"${envVariables.functionName}\" in class \"${envVariables.mainClass}")
     }
-    runCatching {
-        function.call(buildClass.objectInstance)
-    }.getOrElse {
-        throw ExceptionUtil.getRootCause(it)
-    }
+    function.call(buildClass.objectInstance)
 }

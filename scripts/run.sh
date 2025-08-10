@@ -3,8 +3,11 @@
 set -e
 
 cd "$(dirname $0)/.."
+JAR_PATH=./build/libs/ci-builders.jar
 
-./gradlew bootJar
+if [ ! -f "$JAR_PATH" ]; then
+  ./gradlew bootJar
+fi
 echo -e '\n'
 
-java -jar ./build/libs/ci-builders.jar "$@"
+java -jar "$JAR_PATH" "$@"
