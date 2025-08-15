@@ -46,7 +46,8 @@ object NpmLibraryBuilder {
             error("Some projects with release version contain dependencies with development version!")
         }
         //打包，并发布到本地的npm registry中
-        isDevelopmentVersion = !checkVersionResults.projectsPassed
+        val forceDev = envVariables.commandArgs.getOrNull(0) == "dev"
+        isDevelopmentVersion = forceDev || !checkVersionResults.projectsPassed
         registryName = if(isDevelopmentVersion) "development" else "release"
         println("\n\nUsing $registryName repository to publish artifacts.\n")
         val command = """
