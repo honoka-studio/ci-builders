@@ -9,12 +9,10 @@ plugins {
 }
 
 group = "de.honoka.ci"
-version = "1.0.0-dev"
+version = "1.0.1-dev"
 
 java {
-    toolchain {
-        languageVersion = JavaLanguageVersion.of(17)
-    }
+    toolchain.languageVersion = JavaLanguageVersion.of(17)
 }
 
 dependencies {

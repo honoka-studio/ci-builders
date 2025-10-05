@@ -15,12 +15,17 @@ data class EnvVariables(
 
     var projectPath: String? = getEnvOrNull("PROJECT_PATH"),
 
+    var subproject: String? = getEnvOrNull("SUBPROJECT"),
+
     var workspace: String = getEnv("GITHUB_WORKSPACE"),
 
     var workspaceName: String = "",
 
     val githubOutput: String = getEnv("GITHUB_OUTPUT")
 ) {
+
+    val projectName: String
+        get() = if(subproject?.isBlank() == false) subproject!! else workspaceName
 
     fun initArgs(args: Array<String>) {
         var startIndex = 2
@@ -31,15 +36,16 @@ data class EnvVariables(
             functionName = args[0]
             startIndex = 1
         }
-        this.commandArgs = args.toList().subList(startIndex, args.size)
+        commandArgs = args.toList().subList(startIndex, args.size)
         initMainClass()
         initWorkspace()
     }
 
     private fun initMainClass() {
-        val thisClass = ::main.javaMethod!!.declaringClass.name
-        val prefix = thisClass.take(thisClass.lastIndexOf(".") + 1)
         mainClass?.let { return }
+        val prefix = ::main.javaMethod!!.declaringClass.name.run {
+            take(lastIndexOf(".") + 1)
+        }
         val suffix = builderNameClassMap[builderName] ?: run {
             error("No builder with name \"$builderName\"!")
         }
@@ -48,6 +54,9 @@ data class EnvVariables(
 
     private fun initWorkspace() {
         projectPath = projectPath ?: "$workspace/repo"
+        if(subproject?.isBlank() == false) {
+            projectPath += "/$subproject"
+        }
         workspaceName = workspace.substring(workspace.lastIndexOf("/") + 1)
     }
 }

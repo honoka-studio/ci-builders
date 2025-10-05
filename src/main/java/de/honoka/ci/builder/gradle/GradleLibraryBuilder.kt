@@ -24,6 +24,9 @@ object GradleLibraryBuilder {
 
     private lateinit var repositoryName: String
 
+    private val repositoryPath: String
+        get() = "${envVariables.workspace}/maven-repo/repository/$repositoryName"
+
     private var isDevelopmentVersion: Boolean = true
 
     private val mavenRepoUrl = getEnv("REMOTE_MAVEN_REPO_URL")
@@ -49,7 +52,7 @@ object GradleLibraryBuilder {
         isDevelopmentVersion = !projectsPassed
         repositoryName = if(isDevelopmentVersion) "development" else "release"
         println("\n\nUsing $repositoryName repository to publish artifacts.\n")
-        FileUtil.mkdir("${envVariables.workspace}/maven-repo/repository/$repositoryName")
+        FileUtil.mkdir(repositoryPath)
         /*
          * 若仅在Gradle中指定task的依赖关系，无法保证在B模块依赖A模块时，在A模块的publish任务执行完成之后，
          * 就能在同一次构建的后续任务当中，使B模块能够从本地仓库中找到其所依赖的A模块。
@@ -75,7 +78,6 @@ object GradleLibraryBuilder {
 
     private fun publishToLocal(project: String? = null) {
         val taskName = if(project == null) "publish" else ":$project:publish"
-        val repositoryPath = "${envVariables.workspace}/maven-repo/repository/$repositoryName"
         val command = """
             ./gradlew -PremoteMavenRepositoryUrl=$repositoryPath \
                       -PisDevelopmentRepository=$isDevelopmentVersion $taskName
@@ -85,7 +87,7 @@ object GradleLibraryBuilder {
 
     fun publish() {
         build()
-        var commitMessage = "Update ${envVariables.workspaceName}"
+        var commitMessage = "Update ${envVariables.projectName}"
         if(isDevelopmentVersion) {
             commitMessage += " (dev)"
         }

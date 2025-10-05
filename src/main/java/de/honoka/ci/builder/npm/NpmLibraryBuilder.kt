@@ -120,7 +120,7 @@ object NpmLibraryBuilder {
 
     fun publish() {
         build()
-        var commitMessage = "Update ${envVariables.workspaceName}"
+        var commitMessage = "Update ${envVariables.projectName}"
         if(isDevelopmentVersion) {
             commitMessage += " (dev)"
         }
