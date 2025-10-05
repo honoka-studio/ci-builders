@@ -1,12 +1,14 @@
 package de.honoka.ci.builder.gradle
 
 import cn.hutool.core.io.FileUtil
+import cn.hutool.core.util.RandomUtil
 import cn.hutool.json.JSONObject
 import de.honoka.ci.builder.envVariables
 import de.honoka.ci.builder.util.BuilderConfig
 import de.honoka.ci.builder.util.execInProjectPath
 import de.honoka.ci.builder.util.execInWorkspace
 import de.honoka.ci.builder.util.getEnv
+import java.util.concurrent.TimeUnit
 
 @Suppress("unused")
 object GradleLibraryBuilder {
@@ -99,7 +101,6 @@ object GradleLibraryBuilder {
             # [workspace]/maven-repo/repository下，并替换已存在的内容。
             #
             cp -rf maven-repo-changes/maven-repo/repository/. maven-repo/repository/
-            rm -rf maven-repo-changes/maven-repo
             # 进入存储Maven仓库文件的Git仓库，设置提交者信息，然后提交并推送
             cd maven-repo/repository
             date > update_time.txt
@@ -108,7 +109,20 @@ object GradleLibraryBuilder {
             git add .
             git commit -m "$commitMessage"
             git push
+            rm -rf maven-repo-changes/maven-repo
         """.trimIndent()
-        execInWorkspace(command)
+        var exception: Throwable? = null
+        for(i in 1..3) {
+            runCatching {
+                execInWorkspace(command)
+                return
+            }.getOrElse {
+                exception = it
+                println("\nGit push failed (tried $i). Waiting to retry...\n")
+                TimeUnit.SECONDS.sleep(RandomUtil.randomLong(3, 11))
+                FileUtil.del("${envVariables.workspace}/maven-repo")
+            }
+        }
+        exception?.let { throw it }
     }
 }

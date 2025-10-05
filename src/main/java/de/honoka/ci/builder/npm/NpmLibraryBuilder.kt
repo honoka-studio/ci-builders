@@ -1,6 +1,7 @@
 package de.honoka.ci.builder.npm
 
 import cn.hutool.core.io.FileUtil
+import cn.hutool.core.util.RandomUtil
 import de.honoka.ci.builder.envVariables
 import de.honoka.ci.builder.util.BuilderConfig
 import de.honoka.ci.builder.util.execInProjectPath
@@ -126,7 +127,7 @@ object NpmLibraryBuilder {
         }
         val command = """
             # 将本地npm仓库复制到Git仓库中
-            mv -f $localRegistryPath/.verdaccio-db.json maven-repo/files/verdaccio/storage/$registryName/
+            cp -f $localRegistryPath/.verdaccio-db.json maven-repo/files/verdaccio/storage/$registryName/
             cp -rf $localRegistryPath/. maven-repo/repository/npm/$registryName/
             # 进入存储Maven仓库文件的Git仓库，设置提交者信息，然后提交并推送
             cd maven-repo
@@ -139,6 +140,23 @@ object NpmLibraryBuilder {
             git commit -m "$commitMessage"
             git push
         """.trimIndent()
-        execInWorkspace(command)
+        var exception: Throwable? = null
+        for(i in 1..3) {
+            runCatching {
+                execInWorkspace(command)
+                return
+            }.getOrElse {
+                exception = it
+                println("\nGit push failed (tried $i). Waiting to retry...\n")
+                TimeUnit.SECONDS.sleep(RandomUtil.randomLong(3, 11))
+                val command = """
+                    rm -rf maven-repo
+                    git clone "$npmRegistryUrl" maven-repo
+                    mkdir -p maven-repo/repository/npm/$registryName
+                """.trimIndent()
+                execInWorkspace(command)
+            }
+        }
+        exception?.let { throw it }
     }
 }
