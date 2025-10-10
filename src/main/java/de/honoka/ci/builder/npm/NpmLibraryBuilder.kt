@@ -129,6 +129,7 @@ object NpmLibraryBuilder {
             # 将本地npm仓库复制到Git仓库中
             cp -f $localRegistryPath/.verdaccio-db.json maven-repo/files/verdaccio/storage/$registryName/
             cp -rf $localRegistryPath/. maven-repo/repository/npm/$registryName/
+            rm -f maven-repo/repository/npm/$registryName/.verdaccio-db.json
             # 进入存储Maven仓库文件的Git仓库，设置提交者信息，然后提交并推送
             cd maven-repo
             date > repository/npm/update_time.txt

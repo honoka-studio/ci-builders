@@ -15,7 +15,7 @@ class NpmProject(val projectPath: String, registryPath: String = "/home/npm-regi
 
     val name: String = packageJson.getStr("name")
 
-    val version: String = packageJson.getStr("version")
+    val version: String? = packageJson.getStr("version")
 
     val packageName: String = name.run {
         if(contains("/")) {

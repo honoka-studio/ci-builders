@@ -2,7 +2,6 @@ package de.honoka.ci.builder.gradle
 
 import cn.hutool.core.io.FileUtil
 import cn.hutool.core.util.RandomUtil
-import cn.hutool.json.JSONObject
 import de.honoka.ci.builder.envVariables
 import de.honoka.ci.builder.util.BuilderConfig
 import de.honoka.ci.builder.util.execInProjectPath
@@ -34,24 +33,12 @@ object GradleLibraryBuilder {
     private val mavenRepoUrl = getEnv("REMOTE_MAVEN_REPO_URL")
 
     private fun build() {
-        //读取当前Gradle项目根模块的版本信息，检查版本号是否符合要求
-        val checkTaskOut = execInProjectPath(
-            "chmod +x ./gradlew && ./gradlew checkVersionOfProjects"
-        )
-        val results = JSONObject()
-        checkTaskOut.lineSequence().forEach {
-            if(!it.contains("results.") || !it.contains("=")) return@forEach
-            it.removePrefix("results.").split("=").let { p ->
-                results[p[0]] = p[1]
-            }
-        }
-        val projectsPassed = results.getStr("projectsPassed").toBoolean()
-        val dependenciesPassed = results.getStr("dependenciesPassed").toBoolean()
-        if(projectsPassed && !dependenciesPassed) {
+        val checkVersionResults = GradleVersionChecker(envVariables.projectPath!!).check()
+        if(checkVersionResults.projectsPassed && !checkVersionResults.dependenciesPassed) {
             error("Some projects with release version contain dependencies with development version!")
         }
         //打包，并发布到一个空的Maven仓库中
-        isDevelopmentVersion = !projectsPassed
+        isDevelopmentVersion = !checkVersionResults.projectsPassed
         repositoryName = if(isDevelopmentVersion) "development" else "release"
         println("\n\nUsing $repositoryName repository to publish artifacts.\n")
         FileUtil.mkdir(repositoryPath)

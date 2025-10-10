@@ -1,16 +1,18 @@
 package de.honoka.ci.builder.npm
 
+import cn.hutool.core.bean.BeanUtil
 import cn.hutool.json.JSONObject
 import cn.hutool.json.JSONUtil
+import de.honoka.ci.builder.gradle.GradleVersionChecker
 import java.io.File
 
 class NpmVersionChecker(private val rootProjectPath: String) {
 
     data class Results(
 
-        var projectsPassed: Boolean = true,
+        var projectsPassed: Boolean = false,
 
-        var dependenciesPassed: Boolean = true
+        var dependenciesPassed: Boolean = false
     )
 
     private val projects = ArrayList<NpmProject>()
@@ -18,14 +20,25 @@ class NpmVersionChecker(private val rootProjectPath: String) {
     private val results = Results()
 
     fun check(): Results {
-        val project = NpmProject(rootProjectPath)
-        projects.add(project)
-        findPackageJson(project)
+        val rootProject = NpmProject(rootProjectPath)
+        if(rootProject.version != null) {
+            projects.add(rootProject)
+        } else if(File("$rootProjectPath/build.gradle.kts").exists()) {
+            println("Checking the root project version by Gradle...\n")
+            val gradleResults = GradleVersionChecker(rootProjectPath).check()
+            if(!gradleResults.passed) {
+                BeanUtil.copyProperties(gradleResults, results)
+                return results
+            }
+        } else {
+            error("The version of the root project is not specified!")
+        }
+        findPackageJson(rootProject)
         separator()
         println("Versions:\n")
         for(p in projects) {
             println("${p.name}=${p.version}")
-            if(p.version.contains("dev")) {
+            if(p.version!!.contains("dev")) {
                 results.projectsPassed = false
                 break
             }
