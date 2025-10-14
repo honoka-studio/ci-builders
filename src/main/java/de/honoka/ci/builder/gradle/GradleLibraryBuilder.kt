@@ -58,9 +58,9 @@ object GradleLibraryBuilder {
         val command = """
             find maven-repo/repository -type f -name 'maven-metadata.xml*' -delete
             tar -zcf maven-repo.tar.gz maven-repo/repository
-            mkdir maven-repo-changes
-            mv maven-repo.tar.gz maven-repo-changes/
-            mv maven-repo maven-repo-changes/
+            mkdir ${envVariables.artifactName}
+            mv maven-repo.tar.gz ${envVariables.artifactName}/
+            mv maven-repo ${envVariables.artifactName}/
         """.trimIndent()
         execInWorkspace(command)
     }
@@ -84,10 +84,10 @@ object GradleLibraryBuilder {
             # 将存储Maven仓库文件的Git仓库clone到workspace下
             git clone "$mavenRepoUrl" maven-repo
             #
-            # 将[workspace]/maven-repo-changes/maven-repo/repository下所有内容，复制到
+            # 将[workspace]/[ARTIFACT_NAME]/maven-repo/repository下所有内容，复制到
             # [workspace]/maven-repo/repository下，并替换已存在的内容。
             #
-            cp -rf maven-repo-changes/maven-repo/repository/. maven-repo/repository/
+            cp -rf ${envVariables.artifactName}/maven-repo/repository/. maven-repo/repository/
             # 进入存储Maven仓库文件的Git仓库，设置提交者信息，然后提交并推送
             cd maven-repo/repository
             date > update_time.txt
@@ -96,7 +96,7 @@ object GradleLibraryBuilder {
             git add .
             git commit -m "$commitMessage"
             git push
-            rm -rf maven-repo-changes/maven-repo
+            rm -rf ${envVariables.artifactName}/maven-repo
         """.trimIndent()
         var exception: Throwable? = null
         for(i in 1..3) {

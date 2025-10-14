@@ -36,7 +36,7 @@ object NpmLibraryBuilder {
 
     private val localRegistryPath = "$userHome/.local/share/verdaccio/storage"
 
-    private val artifactsPath = "${envVariables.workspace}/npm-packages"
+    private val artifactsPath = "${envVariables.workspace}/${envVariables.artifactName}"
 
     private var verdaccioProcess: Process? = null
 

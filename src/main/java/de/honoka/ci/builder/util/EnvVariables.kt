@@ -21,7 +21,9 @@ data class EnvVariables(
 
     var workspaceName: String = "",
 
-    val githubOutput: String = getEnv("GITHUB_OUTPUT")
+    val githubOutput: String = getEnv("GITHUB_OUTPUT"),
+
+    val artifactName: String = getEnvOrNull("ARTIFACT_NAME") ?: "artifact"
 ) {
 
     val projectName: String
