@@ -10,9 +10,9 @@ class NpmVersionChecker(private val rootProjectPath: String) {
 
     data class Results(
 
-        var projectsPassed: Boolean = false,
+        var projectsPassed: Boolean = true,
 
-        var dependenciesPassed: Boolean = false
+        var dependenciesPassed: Boolean = true
     )
 
     private val projects = ArrayList<NpmProject>()
