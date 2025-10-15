@@ -8,8 +8,8 @@ if [ -z "$GITHUB_WORKSPACE" ]; then
   exit 10
 fi
 
-if [ -z "$CI_BUILDERS_VERSION" ]; then
-  echo 'Must specify CI_BUILDERS_VERSION!'
+if [ -z "$CIB_VERSION" ]; then
+  echo 'Must specify CIB_VERSION!'
   exit 10
 fi
 # endregion
@@ -18,21 +18,23 @@ cd "$GITHUB_WORKSPACE"
 
 repo_name='honoka-studio/ci-builders'
 
-if echo "$CI_BUILDERS_VERSION" | grep -q '\.'; then
+if echo "$CIB_VERSION" | grep -q '\.'; then
   ref_name="tags"
 else
   ref_name="heads"
 fi
 
-builders_url="https://github.com/$repo_name/archive/refs/$ref_name/$CI_BUILDERS_VERSION.tar.gz"
+cib_url="https://github.com/$repo_name/archive/refs/$ref_name/$CIB_VERSION.tar.gz"
+cib_tar_name="ci-builders"
+cib_tar_file="$cib_tar_name.tar.gz"
 
-echo "Downloading builders from $builders_url"
-curl -L --fail -o builders.tar.gz $builders_url
+echo "Downloading CI builders from $cib_url"
+curl -L --fail -o $cib_tar_file $cib_url
 
-tar -zxf builders.tar.gz
-rm -f builders.tar.gz
-mv $(echo $repo_name | cut -d'/' -f2)-$CI_BUILDERS_VERSION ci-builders
+tar -zxf $cib_tar_file
+rm -f $cib_tar_file
+mv $(echo $repo_name | cut -d'/' -f2)-$CIB_VERSION $cib_tar_name
 
-cd ci-builders
+cd $cib_tar_name
 find . -type f -name '*.sh' | xargs chmod +x
 chmod +x gradlew

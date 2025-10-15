@@ -12,14 +12,7 @@ import java.util.concurrent.TimeUnit
 @Suppress("unused")
 object GradleLibraryBuilder {
 
-    private data class Config(
-
-        var separateProjects: List<String> = listOf(),
-
-        var gitUsername: String? = null,
-
-        var gitEmail: String? = null
-    )
+    private data class Config(var separateProjects: List<String> = listOf())
 
     private val config = BuilderConfig.toBean<Config>()
 
@@ -75,6 +68,7 @@ object GradleLibraryBuilder {
     }
 
     fun publish() {
+        val gitInfo = envVariables.gitInfo!!
         build()
         var commitMessage = "Update ${envVariables.projectName}"
         if(isDevelopmentVersion) {
@@ -91,8 +85,8 @@ object GradleLibraryBuilder {
             # 进入存储Maven仓库文件的Git仓库，设置提交者信息，然后提交并推送
             cd maven-repo/repository
             date > update_time.txt
-            git config --global user.name "${config.gitUsername}"
-            git config --global user.email "${config.gitEmail}"
+            git config --global user.name "${gitInfo.username}"
+            git config --global user.email "${gitInfo.email}"
             git add .
             git commit -m "$commitMessage"
             git push

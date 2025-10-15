@@ -7,27 +7,40 @@ data class EnvVariables(
 
     var builderName: String = "",
 
-    var mainClass: String? = getEnvOrNull("BUILDER_MAIN_CLASS"),
+    var mainClass: String? = getEnvOrNull("CIB_MAIN_CLASS"),
 
     var functionName: String = "",
 
     var commandArgs: List<String> = listOf(),
 
-    var projectPath: String? = getEnvOrNull("PROJECT_PATH"),
+    var projectPath: String? = getEnvOrNull("CIB_PROJECT_PATH"),
 
-    var subproject: String? = getEnvOrNull("SUBPROJECT"),
+    val subproject: String? = getEnvOrNull("CIB_SUBPROJECT"),
 
-    var workspace: String = getEnv("GITHUB_WORKSPACE"),
+    val workspace: String = getEnv("GITHUB_WORKSPACE"),
 
     var workspaceName: String = "",
 
     val githubOutput: String = getEnv("GITHUB_OUTPUT"),
 
-    val artifactName: String = getEnvOrNull("ARTIFACT_NAME") ?: "artifact"
+    val artifactName: String = getEnvOrNull("CIB_ARTIFACT_NAME") ?: "artifact",
+
+    @Transient
+    val gitInfo: GitInfo? = getEnvOrNull("CIB_GIT_INFO")?.let {
+        val parts = it.split("/").map { s -> s.trim().ifBlank { null } }
+        GitInfo(parts[0]!!, parts[1]!!)
+    }
 ) {
 
+    data class GitInfo(
+
+        val username: String,
+
+        val email: String
+    )
+
     val projectName: String
-        get() = if(subproject?.isBlank() == false) subproject!! else workspaceName
+        get() = if(!subproject.isNullOrBlank()) subproject else workspaceName
 
     fun initArgs(args: Array<String>) {
         var startIndex = 2
@@ -56,7 +69,7 @@ data class EnvVariables(
 
     private fun initWorkspace() {
         projectPath = projectPath ?: "$workspace/repo"
-        if(subproject?.isBlank() == false) {
+        if(!subproject.isNullOrBlank()) {
             projectPath += "/$subproject"
         }
         workspaceName = workspace.substring(workspace.lastIndexOf("/") + 1)

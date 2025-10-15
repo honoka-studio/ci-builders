@@ -13,14 +13,7 @@ import java.util.concurrent.TimeUnit
 @Suppress("unused")
 object NpmLibraryBuilder {
 
-    private data class Config(
-
-        var projectsToPublish: List<String> = listOf(),
-
-        var gitUsername: String? = null,
-
-        var gitEmail: String? = null
-    )
+    private data class Config(var projectsToPublish: List<String> = listOf())
 
     private val config = BuilderConfig.toBean<Config>()
 
@@ -120,6 +113,7 @@ object NpmLibraryBuilder {
     }
 
     fun publish() {
+        val gitInfo = envVariables.gitInfo!!
         build()
         var commitMessage = "Update ${envVariables.projectName}"
         if(isDevelopmentVersion) {
@@ -133,8 +127,8 @@ object NpmLibraryBuilder {
             # 进入存储Maven仓库文件的Git仓库，设置提交者信息，然后提交并推送
             cd maven-repo
             date > repository/npm/update_time.txt
-            git config --global user.name "${config.gitUsername}"
-            git config --global user.email "${config.gitEmail}"
+            git config --global user.name "${gitInfo.username}"
+            git config --global user.email "${gitInfo.email}"
             git add repository/npm/$registryName
             git add files/verdaccio/storage/$registryName
             git add repository/npm/update_time.txt
