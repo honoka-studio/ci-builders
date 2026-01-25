@@ -3,20 +3,20 @@ import java.nio.charset.StandardCharsets
 
 plugins {
     java
-    id("org.springframework.boot") version "3.5.4"
+    id("org.springframework.boot") version "3.5.6"
     kotlin("jvm") version "2.2.0"
     kotlin("plugin.spring") version "2.2.0"
 }
 
 group = "de.honoka.ci"
-version = "1.0.2"
+version = "1.0.3-dev"
 
 java {
     toolchain.languageVersion = JavaLanguageVersion.of(17)
 }
 
 dependencies {
-    implementation(platform("org.jetbrains.kotlin:kotlin-bom:2.2.0"))
+    implementation(platform("org.jetbrains.kotlin:kotlin-bom:2.2.21"))
     implementation(platform("org.jetbrains.kotlinx:kotlinx-coroutines-bom:1.10.2"))
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
     implementation("org.jetbrains.kotlin:kotlin-reflect")
