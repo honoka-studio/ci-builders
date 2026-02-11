@@ -1,6 +1,6 @@
 [versions]
 # project modules version
-p-root = "1.0.3-dev"
+p-root = "1.0.3"
 
 # dependencies version
 d-kotlin = "2.2.21"
