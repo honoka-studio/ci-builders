@@ -1,0 +1,20 @@
+[versions]
+# project modules version
+p-root = "1.0.3-dev"
+
+# dependencies version
+d-kotlin = "2.2.21"
+d-kotlin-coroutines = "1.10.2"
+d-spring-boot = "3.5.9"
+
+[plugins]
+kotlin = { id = "org.jetbrains.kotlin.jvm", version.ref = "d-kotlin" }
+kotlin-spring = { id = "org.jetbrains.kotlin.plugin.spring", version.ref = "d-kotlin" }
+spring-boot = { id = "org.springframework.boot", version.ref = "d-spring-boot" }
+
+[libraries]
+kotlin-bom = { module = "org.jetbrains.kotlin:kotlin-bom", version.ref = "d-kotlin" }
+kotlin-coroutines-bom = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-bom", version.ref = "d-kotlin-coroutines" }
+hutool = "cn.hutool:hutool-all:5.8.25"
+slf4j-api = "org.slf4j:slf4j-api:2.0.17"
+logback = "ch.qos.logback:logback-classic:1.5.18"

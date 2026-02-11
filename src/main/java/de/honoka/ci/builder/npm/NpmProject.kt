@@ -40,4 +40,8 @@ class NpmProject(val projectPath: String, registryPath: String = "/home/npm-regi
             null
         }
     }
+
+    val usePnpm = File("$projectPath/pnpm-lock.yaml").exists()
+
+    val needBuild = packageJson.getJSONObject("scripts")?.containsKey("build") == true
 }

@@ -3,27 +3,27 @@ import java.nio.charset.StandardCharsets
 
 plugins {
     java
-    id("org.springframework.boot") version "3.5.6"
-    kotlin("jvm") version "2.2.0"
-    kotlin("plugin.spring") version "2.2.0"
+    alias(libs.plugins.spring.boot)
+    alias(libs.plugins.kotlin)
+    alias(libs.plugins.kotlin.spring)
 }
 
 group = "de.honoka.ci"
-version = "1.0.3-dev"
+version = libs.versions.p.root.get()
 
 java {
     toolchain.languageVersion = JavaLanguageVersion.of(17)
 }
 
 dependencies {
-    implementation(platform("org.jetbrains.kotlin:kotlin-bom:2.2.21"))
-    implementation(platform("org.jetbrains.kotlinx:kotlinx-coroutines-bom:1.10.2"))
+    implementation(platform(libs.kotlin.bom))
+    implementation(platform(libs.kotlin.coroutines.bom))
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
     implementation("org.jetbrains.kotlin:kotlin-reflect")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core")
-    implementation("cn.hutool:hutool-all:5.8.25")
-    implementation("org.slf4j:slf4j-api:2.0.7")
-    implementation("ch.qos.logback:logback-classic:1.4.14")
+    implementation(libs.hutool)
+    implementation(libs.slf4j.api)
+    implementation(libs.logback)
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")
 }
 

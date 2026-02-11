@@ -99,11 +99,14 @@ object NpmLibraryBuilder {
 
     private fun publishToLocal(projectPath: String) {
         NpmProject(projectPath, localRegistryPath).run {
+            val npmName = if(usePnpm) "pnpm" else "npm"
             val artifactPath = "$artifactsPath/$name"
             FileUtil.mkdir(artifactPath)
             val command = """
                 cd $projectPath
                 cp -f ${envVariables.workspace}/maven-repo/files/verdaccio/.npmrc.honoka ./
+                $npmName install
+                ${if(needBuild) "$npmName run build" else ""}
                 npm publish --userconfig .npmrc.honoka --registry=http://localhost:4873
                 cp -f ${packageFile.path} $artifactPath/
                 cp -f ${packageJsonFileInRegistry.path} $artifactPath/
