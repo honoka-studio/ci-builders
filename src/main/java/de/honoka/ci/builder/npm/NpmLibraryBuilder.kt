@@ -107,7 +107,7 @@ object NpmLibraryBuilder {
                 cp -f ${envVariables.workspace}/maven-repo/files/verdaccio/.npmrc.honoka ./
                 $npmName install
                 ${if(needBuild) "$npmName run build" else ""}
-                npm publish --userconfig .npmrc.honoka --registry=http://localhost:4873
+                npm publish --tag latest --userconfig .npmrc.honoka --registry=http://localhost:4873
                 cp -f ${packageFile.path} $artifactPath/
                 cp -f ${packageJsonFileInRegistry.path} $artifactPath/
             """.trimIndent()
