@@ -3,11 +3,13 @@
 set -e
 
 cd "$(dirname $0)/.."
-JAR_PATH=./build/libs/ci-builders.jar
+SCRIPTS_PATH=./build/install/ci-builders/bin
 
-if [ ! -f "$JAR_PATH" ]; then
-  ./gradlew bootJar
+if [ ! -e "$SCRIPTS_PATH" ] && [ "$1" != "--no-build" ]; then
+  ./gradlew installDist
 fi
 echo -e '\n'
 
-java -jar "$JAR_PATH" "$@"
+cd $SCRIPTS_PATH
+chmod +x *
+./ci-builders "$@"

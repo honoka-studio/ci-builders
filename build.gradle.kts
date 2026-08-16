@@ -3,9 +3,8 @@ import java.nio.charset.StandardCharsets
 
 plugins {
     java
-    alias(libs.plugins.spring.boot)
+    application
     alias(libs.plugins.kotlin)
-    alias(libs.plugins.kotlin.spring)
 }
 
 group = "de.honoka.ci"
@@ -27,6 +26,10 @@ dependencies {
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit5")
 }
 
+application {
+    mainClass = "de.honoka.ci.builder.LauncherKt"
+}
+
 tasks {
     withType<JavaCompile> {
         options.run {
@@ -40,10 +43,6 @@ tasks {
         compilerOptions {
             freeCompilerArgs.addAll("-Xjsr305=strict", "-Xjvm-default=all")
         }
-    }
-
-    bootJar {
-        archiveFileName = "${project.name}.jar"
     }
 
     withType<Test> {
